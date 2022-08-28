@@ -10,15 +10,15 @@ local redis = require("redis")
 function lock(KEYS, ARGV)
     -- first lock
     if (redis.call('exists', KEYS[1]) == 0) then
-        redis.call('hincrby', KEYS[1], ARGV[2], 1);
+        redis.call('hset', KEYS[1], ARGV[2], 1);
         redis.call('pexpire', KEYS[1], ARGV[1]);
-        return nil;
+        return 0;
     end;
     -- reentrant
     if (redis.call('hexists', KEYS[1], ARGV[2]) == 1) then
         redis.call('hincrby', KEYS[1], ARGV[2], 1);
         redis.call('pexpire', KEYS[1], ARGV[1]);
-        return nil;
+        return 0;
     end;
     -- lock faile
     return redis.call('pttl', KEYS[1]);
