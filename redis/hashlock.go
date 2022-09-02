@@ -8,13 +8,8 @@ import (
 	"time"
 )
 
-const (
-	defaultTimeout = 3000 * time.Millisecond
-	defaultExpire  = 3000 * time.Millisecond
-)
-
 var (
-	lockScript = redis.NewScript("if (redis.call('exists', KEYS[1]) == 0) then\n" +
+	hashLock = redis.NewScript("if (redis.call('exists', KEYS[1]) == 0) then\n" +
 		"    redis.call('hset', KEYS[1], ARGV[2], 1);\n" +
 		"    redis.call('pexpire', KEYS[1], ARGV[1]);\n" +
 		"    return 0;\n    " +
@@ -26,7 +21,7 @@ var (
 		"end;\n" +
 		"return redis.call('pttl', KEYS[1]);")
 
-	unlockScript = redis.NewScript("if (redis.call('hexists', KEYS[1], ARGV[2]) == 0) then\n" +
+	hashUnlock = redis.NewScript("if (redis.call('hexists', KEYS[1], ARGV[2]) == 0) then\n" +
 		"    return 0;\n" +
 		"end;\n" +
 		"local counter = redis.call('hincrby', KEYS[1], ARGV[2], -1)\n" +
@@ -70,7 +65,7 @@ func (lock *HashLock) LockWithTime(expire, timeout time.Duration) (bool, error) 
 }
 
 func (lock *HashLock) Unlock() error {
-	_, err := unlockScript.Run(context.Background(),
+	_, err := hashUnlock.Run(context.Background(),
 		lock.rdb, []string{lock.key}, lock.expire.Milliseconds(), lock.id).Result()
 	if err != nil {
 		return err
@@ -84,7 +79,7 @@ func (lock *HashLock) tryLock(ctx context.Context) (bool, error) {
 
 	var timer *time.Timer
 	for {
-		ttl, err := lockScript.Run(ctx, lock.rdb, []string{lock.key}, lock.expire.Milliseconds(), lock.id).Int()
+		ttl, err := hashLock.Run(ctx, lock.rdb, []string{lock.key}, lock.expire.Milliseconds(), lock.id).Int()
 		if err != nil {
 			return false, err
 		} else if ttl == 0 {
@@ -111,5 +106,4 @@ func (lock *HashLock) tryLock(ctx context.Context) (bool, error) {
 		case <-timer.C:
 		}
 	}
-
 }

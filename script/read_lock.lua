@@ -20,7 +20,7 @@ function lock(KEYS, ARGV)
         redis.call('incr', timeoutKey);
         redis.call('pexpire', timeoutKey, ARGV[1]);
         redis.call('pexpire', KEYS[1], ARGV[1]);
-        return nil;
+        return 0;
     end;
     if (mode == 'read' or (mode == 'write' and redis.call('hexists', KEYS[1], ARGV[2] .. ':write'))) then
         redis.call('hincrby', KEYS[1], ARGV[2], 1);
@@ -29,7 +29,7 @@ function lock(KEYS, ARGV)
         redis.call('pexpire', timeoutKey, ARGV[1]);
         local remainTime = redis.call('pttl', KEYS[1]);
         redis.call('pexpire', KEYS[1], math.max(remainTime, ARGV[1]));
-        return nil;
+        return 0;
     end;
     return redis.call('pttl', KEYS[1]);
 end
@@ -44,7 +44,7 @@ function unlock(KEYS, ARGV)
         return 1;
     end;
     if redis.call('hexists', KEYS[1], ARGV[2]) == 0 then
-        return nil;
+        return 1;
     end;
 
     local counter = redis.call('hincrby', KEYS[1], ARGV[2], -1);

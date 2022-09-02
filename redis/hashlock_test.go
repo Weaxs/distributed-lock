@@ -1,7 +1,9 @@
 package redis
 
 import (
+	"context"
 	"github.com/go-redis/redis/v9"
+	"github.com/stretchr/testify/assert"
 	"sync"
 	"testing"
 	"time"
@@ -14,7 +16,7 @@ const (
 
 func TestReentrant(t *testing.T) {
 	option := &redis.Options{
-		Addr:     "localhost:49154",
+		Addr:     "localhost:6379",
 		Username: "default",
 		Password: "redispw",
 	}
@@ -26,14 +28,20 @@ func TestReentrant(t *testing.T) {
 	hashLock := NewHashLock(rdb, key)
 
 	err := lockTest(t, hashLock, defaultTestExpire, defaultTestTimeout)
+	reentrant, _ := rdb.HGet(context.Background(), hashLock.key, hashLock.id).Int()
+	assert.Equal(t, 1, reentrant, "reentrant count should be 1")
 	if err != nil {
 		return
 	}
 	t.Run("reentrant-1", func(t *testing.T) {
 		t.Log("reentrant lock start, thead: " + t.Name())
 		_ = lockTest(t, hashLock, defaultTestExpire, defaultTestTimeout)
+		reentrant, _ := rdb.HGet(context.Background(), hashLock.key, hashLock.id).Int()
+		assert.Equal(t, 2, reentrant, "reentrant count should be 2")
 		t.Run("reentrant-1-1", func(t *testing.T) {
 			_ = lockTest(t, hashLock, defaultTestExpire, defaultTestTimeout)
+			reentrant, _ := rdb.HGet(context.Background(), hashLock.key, hashLock.id).Int()
+			assert.Equal(t, 3, reentrant, "reentrant count should be 3")
 			unlockTest(t, hashLock)
 			wait.Done()
 		})
@@ -45,9 +53,9 @@ func TestReentrant(t *testing.T) {
 	unlockTest(t, hashLock)
 }
 
-func TestTtl(t *testing.T) {
+func TestHLockFailed(t *testing.T) {
 	option := &redis.Options{
-		Addr:     "localhost:49154",
+		Addr:     "localhost:6379",
 		Username: "default",
 		Password: "redispw",
 	}
