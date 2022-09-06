@@ -13,12 +13,12 @@ function lock(KEYS, ARGV)
         redis.call('hset', KEYS[1], 'mode', 'write');
         redis.call('hincrby', KEYS[1], writeThreadKey, 1);
         redis.call('pexpire', KEYS[1], ARGV[1]);
-        return nil;
+        return 0;
     end;
     if mode == 'write' and redis.call('hexists', KEYS[1], writeThreadKey) == 1 then
         redis.call('hincrby', KEYS[1], writeThreadKey, 1);
         redis.call('pexpire', KEYS[1], ARGV[1]);
-        return nil;
+        return 0;
     end;
     return redis.call('pttl', KEYS[1]);
 end
@@ -35,7 +35,7 @@ function unlock(KEYS, ARGV)
         local writeThreadKey =  ARGV[2] .. ':write'
         local lockExists = redis.call('hexists', KEYS[1], writeThreadKey)
         if lockExists == 0 then
-            return nil;
+            return 0;
         else
             local counter = redis.call('hincrby', KEYS[1], writeThreadKey, -1);
             if counter > 0 then
@@ -54,5 +54,5 @@ function unlock(KEYS, ARGV)
             end;
         end;
     end;
-    return nil;
+    return 0;
 end
