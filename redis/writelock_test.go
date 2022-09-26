@@ -14,7 +14,9 @@ func TestWriteLock(t *testing.T) {
 		Password: "redispw",
 	}
 	rdb := redis.NewClient(option)
-
+	defer func(rdb *redis.Client) {
+		_ = rdb.Close()
+	}(rdb)
 	key := "write-lock"
 	writeLock := NewWriteLock(rdb, key)
 
@@ -33,7 +35,9 @@ func TestName(t *testing.T) {
 		Password: "redispw",
 	}
 	rdb := redis.NewClient(option)
-
+	defer func(rdb *redis.Client) {
+		_ = rdb.Close()
+	}(rdb)
 	key := "read-write-lock"
 	readLock := NewReadLock(rdb, key)
 	writeLock := NewWriteLock(rdb, key)

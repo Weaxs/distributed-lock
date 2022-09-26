@@ -21,6 +21,9 @@ func TestReentrant(t *testing.T) {
 		Password: "redispw",
 	}
 	rdb := redis.NewClient(option)
+	defer func(rdb *redis.Client) {
+		_ = rdb.Close()
+	}(rdb)
 	wait := sync.WaitGroup{}
 	wait.Add(2)
 
@@ -60,6 +63,9 @@ func TestHLockFailed(t *testing.T) {
 		Password: "redispw",
 	}
 	rdb := redis.NewClient(option)
+	defer func(rdb *redis.Client) {
+		_ = rdb.Close()
+	}(rdb)
 	wait := sync.WaitGroup{}
 	wait.Add(2)
 	lockName := "hashLock"

@@ -15,7 +15,9 @@ func TestShare(t *testing.T) {
 		Password: "redispw",
 	}
 	rdb := redis.NewClient(option)
-
+	defer func(rdb *redis.Client) {
+		_ = rdb.Close()
+	}(rdb)
 	key := "read-lock"
 	readlock1 := NewReadLock(rdb, key)
 	readlock2 := NewReadLock(rdb, key)
@@ -42,6 +44,9 @@ func TestRLockReentrant(t *testing.T) {
 		Password: "redispw",
 	}
 	rdb := redis.NewClient(option)
+	defer func(rdb *redis.Client) {
+		_ = rdb.Close()
+	}(rdb)
 	wait := sync.WaitGroup{}
 	wait.Add(2)
 
@@ -76,6 +81,9 @@ func TestRLockTtl(t *testing.T) {
 		Password: "redispw",
 	}
 	rdb := redis.NewClient(option)
+	defer func(rdb *redis.Client) {
+		_ = rdb.Close()
+	}(rdb)
 	key := "read-lock-ttl"
 	readlock1 := NewReadLock(rdb, key)
 	readlock2 := NewReadLock(rdb, key)

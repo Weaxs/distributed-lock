@@ -3,6 +3,7 @@ package redis
 import (
 	"context"
 	"errors"
+	"github.com/Weaxs/distributed-lock/common"
 	"github.com/go-redis/redis/v9"
 	"github.com/google/uuid"
 	"time"
@@ -65,8 +66,8 @@ func NewWriteLock(rdb *redis.Client, key string) *WriteLock {
 		rdb:     rdb,
 		id:      uuid.NewString(),
 		key:     key,
-		expire:  defaultExpire,
-		timeout: defaultTimeout,
+		expire:  common.DefaultExpire,
+		timeout: common.DefaultTimeout,
 	}
 }
 
